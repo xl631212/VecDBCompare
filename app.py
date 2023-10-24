@@ -18,8 +18,8 @@ import uuid
 from langchain.schema.document import Document
 from langchain.output_parsers.openai_functions import JsonKeyOutputFunctionsParser
 from langchain.document_loaders import PyPDFLoader
-
 # Set OpenAI API key
+OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY")
 if not OPENAI_API_KEY:
     st.error("OPENAI_API_KEY not set in environment variables!")
     raise SystemExit
@@ -160,7 +160,7 @@ def hypothetical_questions_strategy(docs):
 
 
 def app():
-    image_path = "/Users/xuyingl/Downloads/icon.png"
+    image_path = "icon.png"
     st.sidebar.image(image_path, caption="icon", use_column_width=True)
     st.title("VecDBCompare 0.0.1")
     st.sidebar.markdown("""
