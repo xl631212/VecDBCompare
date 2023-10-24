@@ -69,10 +69,10 @@ def smaller_chunks_strategy(docs):
             retriever.vectorstore.add_documents(sub_docs)
             retriever.docstore.mset(list(zip(doc_ids, docs)))
             memory = ConversationBufferMemory(memory_key="chat_history", return_messages=True)
-            qa = ConversationalRetrievalChain.from_llm(OpenAI(temperature=0), retriever, memory=memory)
-            st.info(prompt, icon="🧐")
-            result = qa({"question": prompt})
-            st.success(result['answer'], icon="🤖")
+        qa = ConversationalRetrievalChain.from_llm(OpenAI(temperature=0), retriever, memory=memory)
+        st.info(prompt, icon="🧐")
+        result = qa({"question": prompt})
+        st.success(result['answer'], icon="🤖")
 
 
 def summary_strategy(docs):
@@ -101,10 +101,10 @@ def summary_strategy(docs):
             summary_docs = [Document(page_content=s, metadata={id_key: doc_ids[i]}) for i, s in enumerate(summaries)]
             retriever.vectorstore.add_documents(summary_docs)
             retriever.docstore.mset(list(zip(doc_ids, docs)))
-            qa = ConversationalRetrievalChain.from_llm(OpenAI(temperature=0), retriever, memory=ConversationBufferMemory(memory_key="chat_history", return_messages=True))
-            st.info(prompt, icon="🧐")
-            result = qa({"question": prompt})
-            st.success(result['answer'], icon="🤖")
+        qa = ConversationalRetrievalChain.from_llm(OpenAI(temperature=0), retriever, memory=ConversationBufferMemory(memory_key="chat_history", return_messages=True))
+        st.info(prompt, icon="🧐")
+        result = qa({"question": prompt})
+        st.success(result['answer'], icon="🤖")
 
 
 def hypothetical_questions_strategy(docs):
@@ -153,10 +153,10 @@ def hypothetical_questions_strategy(docs):
                 question_docs.extend([Document(page_content=s, metadata={id_key: doc_ids[i]}) for s in question_list])
             retriever.vectorstore.add_documents(question_docs)
             retriever.docstore.mset(list(zip(doc_ids, docs)))
-            qa = ConversationalRetrievalChain.from_llm(OpenAI(temperature=0), retriever, memory=ConversationBufferMemory(memory_key="chat_history", return_messages=True))
-            st.info(prompt, icon="🧐")
-            result = qa({"question": prompt})
-            st.success(result['answer'], icon="🤖")
+        qa = ConversationalRetrievalChain.from_llm(OpenAI(temperature=0), retriever, memory=ConversationBufferMemory(memory_key="chat_history", return_messages=True))
+        st.info(prompt, icon="🧐")
+        result = qa({"question": prompt})
+        st.success(result['answer'], icon="🤖")
 
 
 
