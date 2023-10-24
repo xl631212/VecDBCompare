@@ -4,3 +4,6 @@ langchain
 tempfile          
 uuid        
 os      
+chromadb 
+tiktoken 
+pypdf
