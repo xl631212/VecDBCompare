@@ -18,8 +18,9 @@ import uuid
 from langchain.schema.document import Document
 from langchain.output_parsers.openai_functions import JsonKeyOutputFunctionsParser
 from langchain.document_loaders import PyPDFLoader
+
 # Set OpenAI API key
-OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY")
+OPENAI_API_KEY = st.secrets["OPENAI_API_KEY"]
 if not OPENAI_API_KEY:
     st.error("OPENAI_API_KEY not set in environment variables!")
     raise SystemExit
@@ -41,121 +42,121 @@ def process_pdf(uploaded_file):
 
 
 def smaller_chunks_strategy(docs):
-    with st.spinner('Processing with smaller_chunks_strategy'):
-        vectorstore = Chroma(
-            collection_name="full_documents",
-            embedding_function=OpenAIEmbeddings()
-        )
-        store = InMemoryStore()
-        id_key = "doc_id"
-        retriever = MultiVectorRetriever(
-            vectorstore=vectorstore,
-            docstore=store,
-            id_key=id_key,
-        )
-        doc_ids = [str(uuid.uuid4()) for _ in docs]
-        child_text_splitter = RecursiveCharacterTextSplitter(chunk_size=400)
-        sub_docs = []
-        for i, doc in enumerate(docs):
-            _id = doc_ids[i]
-            _sub_docs = child_text_splitter.split_documents([doc])
-            for _doc in _sub_docs:
-                _doc.metadata[id_key] = _id
-            sub_docs.extend(_sub_docs)
-
-        retriever.vectorstore.add_documents(sub_docs)
-        retriever.docstore.mset(list(zip(doc_ids, docs)))
-        memory = ConversationBufferMemory(memory_key="chat_history", return_messages=True)
-        qa = ConversationalRetrievalChain.from_llm(OpenAI(temperature=0), retriever, memory=memory)
     prompt = st.text_input("Enter Your Question:", placeholder="Ask something", key="1")
     if prompt:
-        st.info(prompt, icon="🧐")
-        result = qa({"question": prompt})
-        st.success(result['answer'], icon="🤖")
+        with st.spinner('Processing with smaller_chunks_strategy'):
+            vectorstore = Chroma(
+                collection_name="full_documents",
+                embedding_function=OpenAIEmbeddings()
+            )
+            store = InMemoryStore()
+            id_key = "doc_id"
+            retriever = MultiVectorRetriever(
+                vectorstore=vectorstore,
+                docstore=store,
+                id_key=id_key,
+            )
+            doc_ids = [str(uuid.uuid4()) for _ in docs]
+            child_text_splitter = RecursiveCharacterTextSplitter(chunk_size=400)
+            sub_docs = []
+            for i, doc in enumerate(docs):
+                _id = doc_ids[i]
+                _sub_docs = child_text_splitter.split_documents([doc])
+                for _doc in _sub_docs:
+                    _doc.metadata[id_key] = _id
+                sub_docs.extend(_sub_docs)
+    
+            retriever.vectorstore.add_documents(sub_docs)
+            retriever.docstore.mset(list(zip(doc_ids, docs)))
+            memory = ConversationBufferMemory(memory_key="chat_history", return_messages=True)
+            qa = ConversationalRetrievalChain.from_llm(OpenAI(temperature=0), retriever, memory=memory)
+            st.info(prompt, icon="🧐")
+            result = qa({"question": prompt})
+            st.success(result['answer'], icon="🤖")
 
 
 def summary_strategy(docs):
-    with st.spinner('Processing with summary_strategy'):
-        chain = (
-            {"doc": lambda x: x.page_content}
-            | ChatPromptTemplate.from_template("Summarize the following document:\n\n{doc}")
-            | ChatOpenAI(max_retries=0)
-            | StrOutputParser()
-        )
-        summaries = chain.batch(docs, {"max_concurrency": 5})
-        vectorstore = Chroma(
-            collection_name="summaries",
-            embedding_function= OpenAIEmbeddings()
-        )
-        store = InMemoryStore()
-        id_key = "doc_id"
-        retriever = MultiVectorRetriever(
-            vectorstore=vectorstore,
-            docstore=store,
-            id_key=id_key,
-        )
-        doc_ids = [str(uuid.uuid4()) for _ in docs]
-        summary_docs = [Document(page_content=s, metadata={id_key: doc_ids[i]}) for i, s in enumerate(summaries)]
-        retriever.vectorstore.add_documents(summary_docs)
-        retriever.docstore.mset(list(zip(doc_ids, docs)))
-        qa = ConversationalRetrievalChain.from_llm(OpenAI(temperature=0), retriever, memory=ConversationBufferMemory(memory_key="chat_history", return_messages=True))
     prompt = st.text_input("Enter Your Question:", placeholder="Ask something", key="2")
     if prompt:
-        st.info(prompt, icon="🧐")
-        result = qa({"question": prompt})
-        st.success(result['answer'], icon="🤖")
+        with st.spinner('Processing with summary_strategy'):
+            chain = (
+                {"doc": lambda x: x.page_content}
+                | ChatPromptTemplate.from_template("Summarize the following document:\n\n{doc}")
+                | ChatOpenAI(max_retries=0)
+                | StrOutputParser()
+            )
+            summaries = chain.batch(docs, {"max_concurrency": 5})
+            vectorstore = Chroma(
+                collection_name="summaries",
+                embedding_function= OpenAIEmbeddings()
+            )
+            store = InMemoryStore()
+            id_key = "doc_id"
+            retriever = MultiVectorRetriever(
+                vectorstore=vectorstore,
+                docstore=store,
+                id_key=id_key,
+            )
+            doc_ids = [str(uuid.uuid4()) for _ in docs]
+            summary_docs = [Document(page_content=s, metadata={id_key: doc_ids[i]}) for i, s in enumerate(summaries)]
+            retriever.vectorstore.add_documents(summary_docs)
+            retriever.docstore.mset(list(zip(doc_ids, docs)))
+            qa = ConversationalRetrievalChain.from_llm(OpenAI(temperature=0), retriever, memory=ConversationBufferMemory(memory_key="chat_history", return_messages=True))
+            st.info(prompt, icon="🧐")
+            result = qa({"question": prompt})
+            st.success(result['answer'], icon="🤖")
 
 
 def hypothetical_questions_strategy(docs):
-    with st.spinner('Processing with hypothetical_questions_strategy'):
-        functions = [
-            {
-                "name": "hypothetical_questions",
-                "description": "Generate hypothetical questions",
-                "parameters": {
-                    "type": "object",
-                    "properties": {
-                        "questions": {
-                            "type": "array",
-                            "items": {
-                                "type": "string"
-                            },
-                        },
-                    },
-                    "required": ["questions"]
-                }
-            }
-        ]
-        chain = (
-            {"doc": lambda x: x.page_content}
-            | ChatPromptTemplate.from_template("Generate a list of 3 hypothetical questions that the below document could be used to answer:\n\n{doc}")
-            | ChatOpenAI(max_retries=0, model="gpt-4").bind(functions=functions, function_call={"name": "hypothetical_questions"})
-            | JsonKeyOutputFunctionsParser(key_name="questions")
-        )
-        hypothetical_questions = chain.batch(docs, {"max_concurrency": 5})
-        vectorstore = Chroma(
-            collection_name="hypo-questions",
-            embedding_function=OpenAIEmbeddings()
-        )
-        store = InMemoryStore()
-        id_key = "doc_id"
-        retriever = MultiVectorRetriever(
-            vectorstore=vectorstore,
-            docstore=store,
-            id_key=id_key,
-        )
-        doc_ids = [str(uuid.uuid4()) for _ in docs]
-        question_docs = []
-        for i, question_list in enumerate(hypothetical_questions):
-            question_docs.extend([Document(page_content=s, metadata={id_key: doc_ids[i]}) for s in question_list])
-        retriever.vectorstore.add_documents(question_docs)
-        retriever.docstore.mset(list(zip(doc_ids, docs)))
-        qa = ConversationalRetrievalChain.from_llm(OpenAI(temperature=0), retriever, memory=ConversationBufferMemory(memory_key="chat_history", return_messages=True))
     prompt = st.text_input("Enter Your Question:", placeholder="Ask something", key="3")
     if prompt:
-        st.info(prompt, icon="🧐")
-        result = qa({"question": prompt})
-        st.success(result['answer'], icon="🤖")
+        with st.spinner('Processing with hypothetical_questions_strategy'):
+            functions = [
+                {
+                    "name": "hypothetical_questions",
+                    "description": "Generate hypothetical questions",
+                    "parameters": {
+                        "type": "object",
+                        "properties": {
+                            "questions": {
+                                "type": "array",
+                                "items": {
+                                    "type": "string"
+                                },
+                            },
+                        },
+                        "required": ["questions"]
+                    }
+                }
+            ]
+            chain = (
+                {"doc": lambda x: x.page_content}
+                | ChatPromptTemplate.from_template("Generate a list of 3 hypothetical questions that the below document could be used to answer:\n\n{doc}")
+                | ChatOpenAI(max_retries=0, model="gpt-4").bind(functions=functions, function_call={"name": "hypothetical_questions"})
+                | JsonKeyOutputFunctionsParser(key_name="questions")
+            )
+            hypothetical_questions = chain.batch(docs, {"max_concurrency": 5})
+            vectorstore = Chroma(
+                collection_name="hypo-questions",
+                embedding_function=OpenAIEmbeddings()
+            )
+            store = InMemoryStore()
+            id_key = "doc_id"
+            retriever = MultiVectorRetriever(
+                vectorstore=vectorstore,
+                docstore=store,
+                id_key=id_key,
+            )
+            doc_ids = [str(uuid.uuid4()) for _ in docs]
+            question_docs = []
+            for i, question_list in enumerate(hypothetical_questions):
+                question_docs.extend([Document(page_content=s, metadata={id_key: doc_ids[i]}) for s in question_list])
+            retriever.vectorstore.add_documents(question_docs)
+            retriever.docstore.mset(list(zip(doc_ids, docs)))
+            qa = ConversationalRetrievalChain.from_llm(OpenAI(temperature=0), retriever, memory=ConversationBufferMemory(memory_key="chat_history", return_messages=True))
+            st.info(prompt, icon="🧐")
+            result = qa({"question": prompt})
+            st.success(result['answer'], icon="🤖")
 
 
 
