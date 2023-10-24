@@ -1,6 +1,6 @@
-streamlit  # As of my last training cut-off in January 2022, you might want to check for the latest version.
-openai   # As of my last training cut-off in January 2022, you might want to check for the latest version.
-langchain # This is a placeholder as I'm not aware of the exact version or if "langchain" is a real package. You might need to adjust this.
-tempfile          # This is part of the Python standard library, so you don't need to include it in requirements.txt.
-uuid              # This is part of the Python standard library, so you don't need to include it in requirements.txt.
+streamlit  
+openai   
+langchain 
+tempfile          
+uuid        
 os      
